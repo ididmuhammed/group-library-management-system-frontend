@@ -6,7 +6,7 @@ const NAV_ITEMS = [
   { to: '/my-loans', label: 'My Borrowed Books', permission: 'BOOK_BORROW' },
 
    { to: '/all-borrowed-books', label: 'Borrowed Books', permission: 'BORROW_RECORD_READ_ALL' },
-
+{ to: '/all-fines', label: 'All Fines', permission: 'BORROW_RECORD_READ_ALL' },
   { to: '/admin/users', label: 'People', permission: 'USER_READ' },
   { to: '/admin/roles', label: 'Roles', permission: 'ROLE_MANAGE' },
 ];

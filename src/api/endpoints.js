@@ -14,7 +14,10 @@ export const bookApi = {
   borrow: (id) => api.post(`/books/${id}/borrow`),
   returnBook: (recordId) => api.post(`/books/borrow-records/${recordId}/return`),
   myLoans: () => api.get('/books/my-loans'),
-  allBorrowedBooks: ()=> api.get('/books/borrow-records')
+  allBorrowedBooks: ()=> api.get('/books/borrow-records'),
+  allFines: () => api.get('fines'),
+  payFine: (id) => api.patch(`fines/${id}/pay`),
+  waiveFine: (id) => api.patch(`/fines/${id}/waive`),
 };
 
 export const userApi = {
