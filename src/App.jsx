@@ -13,6 +13,7 @@ import AdminRolesPage from './pages/AdminRolesPage';
 import ForbiddenPage from './pages/ForbiddenPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AllBorrowedBooksPage from './pages/AllBorrowedBooksPage'
+import FinesPage from './pages/FinesPage';
 
 export default function App() {
   return (
@@ -36,6 +37,10 @@ export default function App() {
 
               <Route element={<RequirePermission permission="BORROW_RECORD_READ_ALL" />}>
                 <Route path='/all-borrowed-books' element={<AllBorrowedBooksPage />} />
+              </Route>
+
+               <Route element={<RequirePermission permission="BORROW_RECORD_READ_ALL" />}>
+                <Route path='/all-fines' element={<FinesPage />} />
               </Route>
 
               <Route element={<RequirePermission permission="USER_READ" />}>
