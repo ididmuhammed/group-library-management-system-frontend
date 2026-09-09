@@ -1,19 +1,21 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { ToastProvider } from './context/ToastContext';
-import RequireAuth from './routes/RequireAuth';
-import RequirePermission from './routes/RequirePermission';
-import AppLayout from './layouts/AppLayout';
+import { Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
+import RequireAuth from "./routes/RequireAuth";
+import RequirePermission from "./routes/RequirePermission";
+import AppLayout from "./layouts/AppLayout";
 
-import LoginPage from './pages/LoginPage';
-import BooksPage from './pages/BooksPage';
-import MyLoansPage from './pages/MyLoansPage';
-import AdminUsersPage from './pages/AdminUsersPage';
-import AdminRolesPage from './pages/AdminRolesPage';
-import ForbiddenPage from './pages/ForbiddenPage';
-import NotFoundPage from './pages/NotFoundPage';
-import AllBorrowedBooksPage from './pages/AllBorrowedBooksPage'
-import FinesPage from './pages/FinesPage';
+import LoginPage from "./pages/LoginPage";
+import BooksPage from "./pages/BooksPage";
+import MyLoansPage from "./pages/MyLoansPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminRolesPage from "./pages/AdminRolesPage";
+import ForbiddenPage from "./pages/ForbiddenPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import AllBorrowedBooksPage from "./pages/AllBorrowedBooksPage";
+import FinesPage from "./pages/FinesPage";
+import MyReservationsPage from "./pages/MyReservationsPage";
+import AllReservationsPage from "./pages/AllReservationsPage";
 
 export default function App() {
   return (
@@ -31,16 +33,40 @@ export default function App() {
               </Route>
 
               <Route element={<RequirePermission permission="BOOK_BORROW" />}>
-
                 <Route path="/my-loans" element={<MyLoansPage />} />
               </Route>
 
-              <Route element={<RequirePermission permission="BORROW_RECORD_READ_ALL" />}>
-                <Route path='/all-borrowed-books' element={<AllBorrowedBooksPage />} />
+              <Route
+                element={
+                  <RequirePermission permission="BORROW_RECORD_READ_ALL" />
+                }
+              >
+                <Route
+                  path="/all-borrowed-books"
+                  element={<AllBorrowedBooksPage />}
+                />
               </Route>
 
-               <Route element={<RequirePermission permission="BORROW_RECORD_READ_ALL" />}>
-                <Route path='/all-fines' element={<FinesPage />} />
+              <Route element={<RequirePermission permission="FINE_READ" />}>
+                <Route path="/all-fines" element={<FinesPage />} />
+              </Route>
+
+              <Route element={<RequirePermission permission="BOOK_RESERVE" />}>
+                <Route
+                  path="/my-reservations"
+                  element={<MyReservationsPage />}
+                />
+              </Route>
+
+              <Route
+                element={
+                  <RequirePermission permission="RESERVATION_READ_ALL" />
+                }
+              >
+                <Route
+                  path="/all-reservations"
+                  element={<AllReservationsPage />}
+                />
               </Route>
 
               <Route element={<RequirePermission permission="USER_READ" />}>
@@ -61,9 +87,3 @@ export default function App() {
     </AuthProvider>
   );
 }
-
-
-
-
-
-
