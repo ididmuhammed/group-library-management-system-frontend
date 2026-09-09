@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { bookApi } from '../api/endpoints';
-import { extractErrorMessage } from '../api/errors';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import PageLoader from '../components/PageLoader';
-import BookFormDialog from '../components/BookFormDialog';
+import { useEffect, useState } from "react";
+import { bookApi } from "../api/endpoints";
+import { extractErrorMessage } from "../api/errors";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import PageLoader from "../components/PageLoader";
+import BookFormDialog from "../components/BookFormDialog";
 
 export default function BooksPage() {
   const { hasPermission } = useAuth();
@@ -12,14 +12,15 @@ export default function BooksPage() {
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [dialogState, setDialogState] = useState(null); // null | { mode: 'create' | 'edit', book? }
   const [busyId, setBusyId] = useState(null);
 
-  const canCreate = hasPermission('BOOK_CREATE');
-  const canUpdate = hasPermission('BOOK_UPDATE');
-  const canDelete = hasPermission('BOOK_DELETE');
-  const canBorrow = hasPermission('BOOK_BORROW');
+  const canCreate = hasPermission("BOOK_CREATE");
+  const canUpdate = hasPermission("BOOK_UPDATE");
+  const canDelete = hasPermission("BOOK_DELETE");
+  const canBorrow = hasPermission("BOOK_BORROW");
+  const canReserve = hasPermission("BOOK_RESERVE");
 
   async function loadBooks() {
     setLoading(true);
@@ -27,7 +28,7 @@ export default function BooksPage() {
       const { data } = await bookApi.list();
       setBooks(data);
     } catch (err) {
-      notify(extractErrorMessage(err, 'Could not load the catalog.'), 'error');
+      notify(extractErrorMessage(err, "Could not load the catalog."), "error");
     } finally {
       setLoading(false);
     }
@@ -42,10 +43,29 @@ export default function BooksPage() {
     setBusyId(book.id);
     try {
       await bookApi.borrow(book.id);
-      notify(`"${book.title}" is checked out to you.`, 'success');
+      notify(`"${book.title}" is checked out to you.`, "success");
       loadBooks();
     } catch (err) {
-      notify(extractErrorMessage(err, 'Could not check out this book.'), 'error');
+      notify(
+        extractErrorMessage(err, "Could not check out this book."),
+        "error",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReserve(book) {
+    setBusyId(book.id);
+    try {
+      await bookApi.reserve(book.id);
+      notify(
+        `You're on the list for "${book.title}" — we'll email you when a copy is ready.`,
+        "success",
+      );
+      loadBooks();
+    } catch (err) {
+      notify(extractErrorMessage(err, "Could not reserve this book."), "error");
     } finally {
       setBusyId(null);
     }
@@ -56,10 +76,10 @@ export default function BooksPage() {
     setBusyId(book.id);
     try {
       await bookApi.remove(book.id);
-      notify(`"${book.title}" removed from the catalog.`, 'success');
+      notify(`"${book.title}" removed from the catalog.`, "success");
       loadBooks();
     } catch (err) {
-      notify(extractErrorMessage(err, 'Could not remove this book.'), 'error');
+      notify(extractErrorMessage(err, "Could not remove this book."), "error");
     } finally {
       setBusyId(null);
     }
@@ -71,7 +91,8 @@ export default function BooksPage() {
   }
 
   const filtered = books.filter((b) => {
-    const haystack = `${b.title} ${b.author} ${b.category || ''} ${b.isbn || ''}`.toLowerCase();
+    const haystack =
+      `${b.title} ${b.author} ${b.category || ""} ${b.isbn || ""}`.toLowerCase();
     return haystack.includes(query.toLowerCase());
   });
 
@@ -83,7 +104,10 @@ export default function BooksPage() {
           <h1>Every title on the shelves</h1>
         </div>
         {canCreate && (
-          <button className="btn btn--primary" onClick={() => setDialogState({ mode: 'create' })}>
+          <button
+            className="btn btn--primary"
+            onClick={() => setDialogState({ mode: "create" })}
+          >
             Add a book
           </button>
         )}
@@ -97,7 +121,9 @@ export default function BooksPage() {
           onChange={(e) => setQuery(e.target.value)}
           className="search-input"
         />
-        <p className="page__count">{filtered.length} of {books.length} titles</p>
+        <p className="page__count">
+          {filtered.length} of {books.length} titles
+        </p>
       </div>
 
       {loading ? (
@@ -112,31 +138,50 @@ export default function BooksPage() {
             const isOut = book.availableCopies <= 0;
             return (
               <article className="index-card" key={book.id}>
-                <div className="index-card__tab">{book.category || 'Uncategorized'}</div>
+                <div className="index-card__tab">
+                  {book.category || "Uncategorized"}
+                </div>
                 <h2 className="index-card__title">{book.title}</h2>
                 <p className="index-card__author">{book.author}</p>
-                {book.isbn && <p className="index-card__isbn">ISBN {book.isbn}</p>}
+                {book.isbn && (
+                  <p className="index-card__isbn">ISBN {book.isbn}</p>
+                )}
 
                 <div className="index-card__availability">
-                  <span className={isOut ? 'stamp stamp--out' : 'stamp stamp--available'}>
-                    {isOut ? 'All copies out' : `${book.availableCopies} of ${book.totalCopies} available`}
+                  <span
+                    className={
+                      isOut ? "stamp stamp--out" : "stamp stamp--available"
+                    }
+                  >
+                    {isOut
+                      ? "All copies out"
+                      : `${book.availableCopies} of ${book.totalCopies} available`}
                   </span>
                 </div>
 
                 <div className="index-card__actions">
-                  {canBorrow && (
+                  {canBorrow && !isOut && (
                     <button
                       className="btn btn--small btn--primary"
-                      disabled={isOut || busyId === book.id}
+                      disabled={busyId === book.id}
                       onClick={() => handleBorrow(book)}
                     >
                       Borrow
                     </button>
                   )}
+                  {canReserve && isOut && (
+                    <button
+                      className="btn btn--small btn--primary"
+                      disabled={busyId === book.id}
+                      onClick={() => handleReserve(book)}
+                    >
+                      {busyId === book.id ? "Reserving…" : "Reserve"}
+                    </button>
+                  )}
                   {canUpdate && (
                     <button
                       className="btn btn--small btn--ghost"
-                      onClick={() => setDialogState({ mode: 'edit', book })}
+                      onClick={() => setDialogState({ mode: "edit", book })}
                     >
                       Edit
                     </button>
