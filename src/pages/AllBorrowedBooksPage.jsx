@@ -1,7 +1,8 @@
 
 import { useEffect, useState } from 'react';
-import { bookApi } from '../api/endpoints';
+import { bookApi, inventoryApi } from '../api/endpoints';
 import { extractErrorMessage } from '../api/errors';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import PageLoader from '../components/PageLoader';
 
@@ -9,13 +10,18 @@ const STATUS_LABEL = {
   BORROWED: 'On loan',
   RETURNED: 'Returned',
   OVERDUE: 'Overdue',
+  LOST: 'Lost',
+  DAMAGED: 'Damaged',
 };
 
 export default function AllBorrowedBooksPage() {
+  const { hasPermission } = useAuth();
   const { notify } = useToast();
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+
+  const canManageInventory = hasPermission('INVENTORY_MANAGE');
 
   async function load() {
     setLoading(true);
@@ -60,8 +66,42 @@ export default function AllBorrowedBooksPage() {
     }
   }
 
-  const active = loans.filter((l) => l.status !== 'RETURNED');
-  const past = loans.filter((l) => l.status === 'RETURNED');
+  async function handleMarkLost(record) {
+    const note = window.prompt(
+      `Report "${record.book.title}" as lost by ${record.borrower.fullName || record.borrower.username}. Add a note (optional):`,
+    );
+    if (note === null) return;
+    setBusyId(record.id);
+    try {
+      await inventoryApi.markLoanLost(record.id, note || undefined);
+      notify(`"${record.book.title}" marked lost and a fine was issued.`, 'success');
+      load();
+    } catch (err) {
+      notify(extractErrorMessage(err, 'Could not mark this book as lost.'), 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleMarkDamaged(record) {
+    const note = window.prompt(
+      `Report "${record.book.title}" as damaged, returned by ${record.borrower.fullName || record.borrower.username}. Add a note (optional):`,
+    );
+    if (note === null) return;
+    setBusyId(record.id);
+    try {
+      await inventoryApi.markLoanDamaged(record.id, note || undefined);
+      notify(`"${record.book.title}" marked damaged and a fine was issued.`, 'success');
+      load();
+    } catch (err) {
+      notify(extractErrorMessage(err, 'Could not mark this book as damaged.'), 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const active = loans.filter((l) => l.status === 'BORROWED' || l.status === 'OVERDUE');
+  const past = loans.filter((l) => l.status !== 'BORROWED' && l.status !== 'OVERDUE');
 
   return (
     <div className="page">
@@ -121,13 +161,33 @@ export default function AllBorrowedBooksPage() {
                       </td>
 
                       <td>
-                        <button
-                          className="btn btn--small btn--primary"
-                          disabled={busyId === record.id}
-                          onClick={() => handleReturn(record)}
-                        >
-                          {busyId === record.id ? 'Returning…' : 'Return'}
-                        </button>
+                        <div className="fine-actions">
+                          <button
+                            className="btn btn--small btn--primary"
+                            disabled={busyId === record.id}
+                            onClick={() => handleReturn(record)}
+                          >
+                            {busyId === record.id ? 'Returning…' : 'Return'}
+                          </button>
+                          {canManageInventory && (
+                            <>
+                              <button
+                                className="btn btn--small btn--danger"
+                                disabled={busyId === record.id}
+                                onClick={() => handleMarkLost(record)}
+                              >
+                                Report lost
+                              </button>
+                              <button
+                                className="btn btn--small btn--danger"
+                                disabled={busyId === record.id}
+                                onClick={() => handleMarkDamaged(record)}
+                              >
+                                Report damaged
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -149,6 +209,7 @@ export default function AllBorrowedBooksPage() {
                     <th>Borrower</th>
                     <th>Borrowed</th>
                     <th>Returned</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
 
@@ -165,6 +226,16 @@ export default function AllBorrowedBooksPage() {
                       <td>{record.borrowedDate}</td>
 
                       <td>{record.returnedDate}</td>
+
+                      <td>
+                        {record.status === 'RETURNED' ? (
+                          STATUS_LABEL[record.status]
+                        ) : (
+                          <span className="stamp stamp--out">
+                            {STATUS_LABEL[record.status] || record.status}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

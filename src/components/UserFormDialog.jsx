@@ -79,12 +79,12 @@ export default function UserFormDialog({ roles, onClose, onSaved }) {
             <div className="checkbox-list">
               {roles.map((r) => (
                 <label className="checkbox-list__item" key={r.id}>
+                  {r.name.replace('ROLE_', '')}
                   <input
                     type="checkbox"
                     checked={form.roleNames.includes(r.name)}
                     onChange={() => toggleRole(r.name)}
                   />
-                  {r.name.replace('ROLE_', '')}
                 </label>
               ))}
             </div>
