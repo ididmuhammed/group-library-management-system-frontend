@@ -72,6 +72,7 @@ export default function BookFormDialog({ mode, book, onClose, onSaved }) {
           <label className="field field--narrow">
             <span>Total copies</span>
             <input
+            // disabled={true}
               type="number"
               min={1}
               value={form.totalCopies}

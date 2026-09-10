@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { extractErrorMessage } from '../api/errors';
 
 export default function LoginPage() {
-  const { status, login } = useAuth();
+  const { status, login, hasPermission} = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,7 +23,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(username, password);
-      const redirectTo = location.state?.from?.pathname || '/books';
+      const redirectTo = hasPermission('DASHBOARD_VIEW')? '/dashboard':  '/books';
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(extractErrorMessage(err, 'Could not sign in. Check your username and password.'));
@@ -38,7 +38,7 @@ export default function LoginPage() {
         <div className="auth-card__stamp" aria-hidden="true">
           §
         </div>
-        <h1>Stacks</h1>
+        <h1>Cops Lib</h1>
         <p className="auth-card__lede">Sign in to your library account.</p>
 
         <form onSubmit={handleSubmit} className="form">

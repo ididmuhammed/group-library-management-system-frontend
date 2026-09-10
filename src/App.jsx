@@ -16,6 +16,8 @@ import AllBorrowedBooksPage from "./pages/AllBorrowedBooksPage";
 import FinesPage from "./pages/FinesPage";
 import MyReservationsPage from "./pages/MyReservationsPage";
 import AllReservationsPage from "./pages/AllReservationsPage";
+import DashboardPage from "./pages/DashboardPage";
+import InventoryPage from "./pages/InventoryPage";
 
 export default function App() {
   return (
@@ -28,8 +30,18 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route path="/" element={<Navigate to="/books" replace />} />
 
+              <Route
+                element={<RequirePermission permission="DASHBOARD_VIEW" />}
+              >
+                <Route path="/dashboard" element={<DashboardPage />} />
+              </Route>
+
               <Route element={<RequirePermission permission="BOOK_READ" />}>
                 <Route path="/books" element={<BooksPage />} />
+              </Route>
+
+              <Route element={<RequirePermission permission="INVENTORY_READ" />}>
+                <Route path="/inventory" element={<InventoryPage />} />
               </Route>
 
               <Route element={<RequirePermission permission="BOOK_BORROW" />}>

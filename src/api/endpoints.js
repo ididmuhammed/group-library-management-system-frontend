@@ -41,6 +41,22 @@ export const userApi = {
   remove: (id) => api.delete(`/admin/users/${id}`),
 };
 
+export const dashboardApi = {
+  stats: () => api.get("/dashboard/stats"),
+};
+
+export const inventoryApi = {
+  summary: () => api.get("/inventory/summary"),
+  logs: () => api.get("/inventory/logs"),
+  recordAcquisition: (payload) => api.post("/inventory/acquisitions", payload),
+  markLoanLost: (recordId, note) =>
+    api.post(`/inventory/borrow-records/${recordId}/lost`, { note }),
+  markLoanDamaged: (recordId, note) =>
+    api.post(`/inventory/borrow-records/${recordId}/damaged`, { note }),
+  recordShelfLoss: (payload) => api.post("/inventory/shelf-loss", payload),
+  recordShelfDamage: (payload) => api.post("/inventory/shelf-damage", payload),
+};
+
 export const roleApi = {
   list: () => api.get("/admin/roles"),
   permissions: () => api.get("/admin/roles/permissions"),

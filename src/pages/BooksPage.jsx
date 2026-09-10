@@ -157,6 +157,13 @@ export default function BooksPage() {
                       ? "All copies out"
                       : `${book.availableCopies} of ${book.totalCopies} available`}
                   </span>
+                  {(book.lostCopies > 0 || book.damagedCopies > 0) && (
+                    <span className="stamp stamp--out">
+                      {book.lostCopies > 0 && `${book.lostCopies} lost`}
+                      {book.lostCopies > 0 && book.damagedCopies > 0 && " · "}
+                      {book.damagedCopies > 0 && `${book.damagedCopies} damaged`}
+                    </span>
+                  )}
                 </div>
 
                 <div className="index-card__actions">
