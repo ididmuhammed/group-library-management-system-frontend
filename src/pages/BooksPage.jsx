@@ -5,6 +5,14 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import PageLoader from "../components/PageLoader";
 import BookFormDialog from "../components/BookFormDialog";
+import PaginationControls from "../components/PaginationControls";
+
+const SORT_OPTIONS = [
+  { value: "title", label: "Title" },
+  { value: "author", label: "Author" },
+  { value: "category", label: "Category" },
+  { value: "availableCopies", label: "Copies available" },
+];
 
 export default function BooksPage() {
   const { hasPermission } = useAuth();
@@ -12,9 +20,24 @@ export default function BooksPage() {
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
   const [dialogState, setDialogState] = useState(null); // null | { mode: 'create' | 'edit', book? }
   const [busyId, setBusyId] = useState(null);
+
+  // Filters (sent to the backend)
+  const [searchInput, setSearchInput] = useState(""); // raw input, debounced into `search`
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [availableOnly, setAvailableOnly] = useState(false);
+
+  // Sorting
+  const [sortField, setSortField] = useState("title");
+  const [sortDir, setSortDir] = useState("asc");
+
+  // Pagination
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   const canCreate = hasPermission("BOOK_CREATE");
   const canUpdate = hasPermission("BOOK_UPDATE");
@@ -22,11 +45,29 @@ export default function BooksPage() {
   const canBorrow = hasPermission("BOOK_BORROW");
   const canReserve = hasPermission("BOOK_RESERVE");
 
+  // Debounce free-text search so we don't fire a request per keystroke.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setPage(0);
+      setSearch(searchInput);
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [searchInput]);
+
   async function loadBooks() {
     setLoading(true);
     try {
-      const { data } = await bookApi.list();
-      setBooks(data);
+      const { data } = await bookApi.list({
+        page,
+        size: pageSize,
+        sort: `${sortField},${sortDir}`,
+        search: search || undefined,
+        category: category || undefined,
+        availableOnly: availableOnly || undefined,
+      });
+      setBooks(data.content);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
     } catch (err) {
       notify(extractErrorMessage(err, "Could not load the catalog."), "error");
     } finally {
@@ -37,7 +78,7 @@ export default function BooksPage() {
   useEffect(() => {
     loadBooks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page, pageSize, sortField, sortDir, search, category, availableOnly]);
 
   async function handleBorrow(book) {
     setBusyId(book.id);
@@ -77,7 +118,12 @@ export default function BooksPage() {
     try {
       await bookApi.remove(book.id);
       notify(`"${book.title}" removed from the catalog.`, "success");
-      loadBooks();
+      // Removing the last row on a page you can't go back from - nudge back a page.
+      if (books.length === 1 && page > 0) {
+        setPage((p) => p - 1);
+      } else {
+        loadBooks();
+      }
     } catch (err) {
       notify(extractErrorMessage(err, "Could not remove this book."), "error");
     } finally {
@@ -90,11 +136,10 @@ export default function BooksPage() {
     loadBooks();
   }
 
-  const filtered = books.filter((b) => {
-    const haystack =
-      `${b.title} ${b.author} ${b.category || ""} ${b.isbn || ""}`.toLowerCase();
-    return haystack.includes(query.toLowerCase());
-  });
+  function toggleSortDir() {
+    setPage(0);
+    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+  }
 
   return (
     <div className="page">
@@ -117,27 +162,66 @@ export default function BooksPage() {
         <input
           type="search"
           placeholder="Search by title, author, category, or ISBN"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className="search-input"
         />
-        <p className="page__count">
-          {filtered.length} of {books.length} titles
-        </p>
+        <input
+          type="text"
+          placeholder="Filter by category"
+          value={category}
+          onChange={(e) => {
+            setPage(0);
+            setCategory(e.target.value);
+          }}
+          className="search-input search-input--narrow"
+        />
+        <label className="checkbox-list__item checkbox-list__item--inline">
+          Available only
+          <input
+            type="checkbox"
+            checked={availableOnly}
+            onChange={(e) => {
+              setPage(0);
+              setAvailableOnly(e.target.checked);
+            }}
+          />
+        </label>
+
+        <div className="sort-control">
+          <select
+            value={sortField}
+            onChange={(e) => {
+              setPage(0);
+              setSortField(e.target.value);
+            }}
+            aria-label="Sort by"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>Sort: {opt.label}</option>
+            ))}
+          </select>
+          <button type="button" className="btn btn--small btn--ghost" onClick={toggleSortDir}>
+            {sortDir === "asc" ? "↑ Asc" : "↓ Desc"}
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <PageLoader label="Pulling the shelves…" />
-      ) : filtered.length === 0 ? (
+      ) : books.length === 0 ? (
         <div className="empty-state">
           <p>No titles match that search.</p>
         </div>
       ) : (
         <div className="card-grid">
-          {filtered.map((book) => {
+          {books.map((book) => {
             const isOut = book.availableCopies <= 0;
             return (
               <article className="index-card" key={book.id}>
+                {book.imageUrl && (
+                  <img className="index-card__cover" src={book.imageUrl} alt={book.title} />
+                )}
                 <div className="index-card__tab">
                   {book.category || "Uncategorized"}
                 </div>
@@ -207,6 +291,20 @@ export default function BooksPage() {
             );
           })}
         </div>
+      )}
+
+      {!loading && (
+        <PaginationControls
+          page={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          onPageChange={setPage}
+          pageSize={pageSize}
+          onPageSizeChange={(size) => {
+            setPage(0);
+            setPageSize(size);
+          }}
+        />
       )}
 
       {dialogState && (

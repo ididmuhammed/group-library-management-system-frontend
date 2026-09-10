@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { userApi } from '../api/endpoints';
 import { extractErrorMessage } from '../api/errors';
 import { useToast } from '../context/ToastContext';
@@ -6,6 +6,8 @@ import { useToast } from '../context/ToastContext';
 export default function UserFormDialog({ roles, onClose, onSaved }) {
   const { notify } = useToast();
   const [form, setForm] = useState({ username: '', email: '', password: '', fullName: '', roleNames: [] });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -22,6 +24,21 @@ export default function UserFormDialog({ roles, onClose, onSaved }) {
     }));
   }
 
+  function handleImageChange(e) {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+  }
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -31,7 +48,7 @@ export default function UserFormDialog({ roles, onClose, onSaved }) {
     }
     setSubmitting(true);
     try {
-      await userApi.create(form);
+      await userApi.create(form, imageFile);
       notify(`${form.username} added.`, 'success');
       onSaved();
     } catch (err) {
@@ -47,6 +64,20 @@ export default function UserFormDialog({ roles, onClose, onSaved }) {
         <h2>Add a person</h2>
 
         <form onSubmit={handleSubmit} className="form">
+          <div className="image-picker">
+            <div className="image-picker__preview">
+              {imagePreview ? (
+                <img src={imagePreview} alt="Profile preview" />
+              ) : (
+                <span className="image-picker__placeholder">No photo</span>
+              )}
+            </div>
+            <label className="field">
+              <span>Profile photo (optional)</span>
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImageChange} />
+            </label>
+          </div>
+
           <div className="field-row">
             <label className="field">
               <span>Full name</span>

@@ -337,9 +337,75 @@ button {
 .page__toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
   margin-bottom: 20px;
-  gap: 16px;
+  gap: 12px;
+}
+
+.search-input--narrow {
+  flex: 0 1 220px;
+  max-width: 220px;
+}
+
+.checkbox-list__item--inline {
+  padding: 0;
+  white-space: nowrap;
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.sort-control select {
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 0.85rem;
+  background: #fff;
+  font-family: inherit;
+}
+
+.page__toolbar > select {
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 0.85rem;
+  background: #fff;
+  font-family: inherit;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.pagination__summary {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination__page-size {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 0.82rem;
+  background: #fff;
+  font-family: inherit;
 }
 
 .page__count {
@@ -813,6 +879,55 @@ button {
 
 .field--narrow {
   max-width: 160px;
+}
+
+.image-picker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.image-picker__preview {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--paper-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.image-picker__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-picker__placeholder {
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 0 4px;
+}
+
+.table-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.index-card__cover {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 3px;
+  margin-bottom: 10px;
+  display: block;
 }
 
 .field-row {
