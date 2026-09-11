@@ -32,6 +32,13 @@ api.interceptors.request.use((config) => {
     console.log("token ", token);
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Let the browser set the multipart boundary itself - if we leave the
+  // instance's default "application/json" Content-Type in place, file
+  // uploads (FormData bodies) get sent with no boundary and the backend
+  // can't parse the multipart request.
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
   return config;
 });
 

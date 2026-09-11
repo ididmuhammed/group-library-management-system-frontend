@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { bookApi } from '../api/endpoints';
 import { extractErrorMessage } from '../api/errors';
 import { useToast } from '../context/ToastContext';
@@ -14,12 +14,32 @@ export default function BookFormDialog({ mode, book, onClose, onSaved }) {
     category: book?.category || '',
     totalCopies: book?.totalCopies ?? 1,
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(book?.imageUrl || null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
+
+  function handleImageChange(e) {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+  }
+
+  useEffect(() => {
+    if (!imageFile) {
+      // Fall back to the book's existing cover (edit mode) when the file
+      // input is cleared, rather than showing nothing.
+      setImagePreview(book?.imageUrl || null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageFile]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -28,10 +48,10 @@ export default function BookFormDialog({ mode, book, onClose, onSaved }) {
     const payload = { ...form, totalCopies: Number(form.totalCopies) };
     try {
       if (isEdit) {
-        await bookApi.update(book.id, payload);
+        await bookApi.update(book.id, payload, imageFile);
         notify(`"${form.title}" updated.`, 'success');
       } else {
-        await bookApi.create(payload);
+        await bookApi.create(payload, imageFile);
         notify(`"${form.title}" added to the catalog.`, 'success');
       }
       onSaved();
@@ -48,6 +68,20 @@ export default function BookFormDialog({ mode, book, onClose, onSaved }) {
         <h2>{isEdit ? 'Edit book' : 'Add a book'}</h2>
 
         <form onSubmit={handleSubmit} className="form">
+          <div className="image-picker">
+            <div className="image-picker__preview">
+              {imagePreview ? (
+                <img src={imagePreview} alt="Cover preview" />
+              ) : (
+                <span className="image-picker__placeholder">No cover</span>
+              )}
+            </div>
+            <label className="field">
+              <span>Cover image (optional)</span>
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImageChange} />
+            </label>
+          </div>
+
           <label className="field">
             <span>Title</span>
             <input value={form.title} onChange={(e) => update('title', e.target.value)} required autoFocus />

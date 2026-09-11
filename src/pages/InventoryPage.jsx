@@ -231,11 +231,13 @@ export default function InventoryPage() {
       const [summaryRes, logsRes, booksRes] = await Promise.all([
         inventoryApi.summary(),
         inventoryApi.logs(),
-        bookApi.list(),
+        // This page needs the full catalog for its dropdowns, not one page
+        // of it - bookApi.list now returns a paged { content, ... } object.
+        bookApi.list({ size: 1000, sort: "title,asc" }),
       ]);
       setSummary(summaryRes.data);
       setLogs(logsRes.data);
-      setBooks(booksRes.data);
+      setBooks(booksRes.data.content);
     } catch (err) {
       notify(extractErrorMessage(err, "Could not load inventory data."), "error");
     } finally {

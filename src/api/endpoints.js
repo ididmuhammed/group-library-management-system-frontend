@@ -1,5 +1,21 @@
 import api from "./axios";
 
+// Builds a multipart/form-data body with a JSON part (named `jsonPartName`)
+// and an optional file part named "image". Used by the book/user create &
+// update endpoints, which accept an optional cover/profile image alongside
+// the JSON fields.
+function toFormData(jsonPartName, payload, imageFile) {
+  const formData = new FormData();
+  formData.append(
+    jsonPartName,
+    new Blob([JSON.stringify(payload)], { type: "application/json" }),
+  );
+  if (imageFile) {
+    formData.append("image", imageFile);
+  }
+  return formData;
+}
+
 export const authApi = {
   login: (username, password) =>
     api.post("/auth/login", { username, password }),
@@ -7,10 +23,12 @@ export const authApi = {
 };
 
 export const bookApi = {
-  list: () => api.get("/books"),
+  list: (params) => api.get("/books", { params }),
   get: (id) => api.get(`/books/${id}`),
-  create: (payload) => api.post("/books", payload),
-  update: (id, payload) => api.put(`/books/${id}`, payload),
+  create: (payload, imageFile) =>
+    api.post("/books", toFormData("book", payload, imageFile)),
+  update: (id, payload, imageFile) =>
+    api.put(`/books/${id}`, toFormData("book", payload, imageFile)),
   remove: (id) => api.delete(`/books/${id}`),
   borrow: (id) => api.post(`/books/${id}/borrow`),
   returnBook: (recordId) =>
@@ -31,9 +49,15 @@ export const reservationApi = {
 };
 
 export const userApi = {
-  list: () => api.get("/admin/users"),
+  list: (params) => api.get("/admin/users", { params }),
   get: (id) => api.get(`/admin/users/${id}`),
-  create: (payload) => api.post("/admin/users", payload),
+  create: (payload, imageFile) =>
+    api.post("/admin/users", toFormData("user", payload, imageFile)),
+  updateImage: (id, imageFile) => {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    return api.put(`/admin/users/${id}/image`, formData);
+  },
   updateRoles: (id, roleNames) =>
     api.put(`/admin/users/${id}/roles`, { roleNames }),
   setEnabled: (id, enabled) =>
